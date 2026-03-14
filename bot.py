@@ -1,6 +1,8 @@
 import asyncio
 import os
 import logging
+from datetime import datetime
+import pytz
 from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, BufferedInputFile
 from aiogram.filters import CommandStart
@@ -9,11 +11,19 @@ from converter import convert_to_video_note, MAX_DURATION
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
+TZ = pytz.timezone(os.getenv("TZ", "Europe/Moscow"))
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+
+class MoscowFormatter(logging.Formatter):
+    """Formatter с временем по Московскому времени"""
+    def formatTime(self, record, datefmt=None):
+        dt = datetime.fromtimestamp(record.created, tz=TZ)
+        return dt.strftime(datefmt or "%Y-%m-%d %H:%M:%S")
+
+
+handler = logging.StreamHandler()
+handler.setFormatter(MoscowFormatter("%(asctime)s - %(levelname)s - %(message)s"))
+logging.basicConfig(level=logging.INFO, handlers=[handler])
 logger = logging.getLogger(__name__)
 
 bot = Bot(token=BOT_TOKEN)
@@ -49,7 +59,6 @@ async def handle_video(message: Message):
     output_path = os.path.join(TEMP_DIR, f"{user_id}_output.mp4")
 
     try:
-        # Проверяем лимит длительности
         if video.duration and video.duration > MAX_DURATION:
             await status_msg.edit_text(
                 f"❌ Видео слишком длинное: {video.duration // 60}м {video.duration % 60}с.\n"

@@ -4,6 +4,17 @@
 
 ---
 
+## [3.2.0] — 2026-03-14
+
+### Добавлено
+- `TZ=Europe/Moscow` в `docker-compose.yml` — правильное время внутри контейнера
+- Монтирование `/etc/localtime` из хоста в контейнер (`:ro`)
+- `MoscowFormatter` в `bot.py` — логи теперь всегда показывают московское время (UTC+3)
+- `pytz==2024.1` добавлен в `requirements.txt`
+- Удалён устаревший `version: "3.9"` из `docker-compose.yml`
+
+---
+
 ## [3.1.0] — 2026-03-14
 
 ### Добавлено
@@ -16,8 +27,8 @@
 - Статусное сообщение теперь показывает длительность видео
 
 ### Изменено
-- Аудиобитрейт снижен с 128 до 96 kbps для экономии места
-- Вместо `-crf 23` используется целевой `-b:v` для точного контроля размера
+- Аудиобитрейт снижен с 128 до 96 kbps
+- Вместо `-crf 23` используется целевой `-b:v`
 
 ---
 
@@ -34,33 +45,25 @@
 ### Добавлено
 - Скрипт `install.sh` — полная автоустановка через curl одной командой
 - Глобальная команда `circlebot` в `/usr/local/bin`
-- Поддержка подкоманд: `start`, `stop`, `restart`, `update`, `status`, `logs`, `install`, `uninstall`
-- Инсталляция в `/opt/circlebot` (отвечает FHS-стандарту)
+- Инсталляция в `/opt/circlebot`
 - Автоустановка Docker если отсутствует
-- Цветной вывод в терминале
 
 ### Изменено
-- `docker-compose.yml`: пути `.env` и `temp/` переведены на абсолютные `/opt/circlebot/...`
+- `docker-compose.yml`: пути переведены на абсолютные `/opt/circlebot/...`
 
 ---
 
 ## [2.0.0] — 2026-03-14
 
 ### Добавлено
-- `Dockerfile` на базе `python:3.12-slim` с автоустановкой `ffmpeg` через `apt`
-- `docker-compose.yml` с `restart: unless-stopped` и логированием
-- `.dockerignore` для исключения лишних файлов из образа
-- `.env.example` — шаблон для настройки
-- Оптимизация слоёв Docker (сначала `requirements.txt`, потом код)
+- `Dockerfile` на базе `python:3.12-slim` с `ffmpeg`
+- `docker-compose.yml` с `restart: unless-stopped`
+- `.dockerignore`, `.env.example`
 
 ---
 
 ## [1.0.0] — 2026-03-14
 
 ### Добавлено
-- `bot.py` — основной файл: polling, обработка `F.video` и `F.document`
-- `converter.py` — конвертация через `ffmpeg`: crop 1:1, scale 640×640
-- `requirements.txt`: `aiogram==3.7.0`, `python-dotenv==1.0.0`
-- `.env` / `.env.example` — управление `BOT_TOKEN`
-- `.gitignore` — исключение секретов и временных файлов из git
+- `bot.py`, `converter.py`, `requirements.txt`
 - Первоначальный релиз бота
