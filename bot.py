@@ -2,7 +2,7 @@ import asyncio
 import os
 import logging
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message
+from aiogram.types import Message, BufferedInputFile
 from aiogram.filters import CommandStart
 from dotenv import load_dotenv
 from converter import convert_to_video_note
@@ -56,8 +56,11 @@ async def handle_video(message: Message):
             return
 
         logger.info(f"Отправляем кружочек пользователю {user_id}")
-        with open(output_path, "rb") as video_file:
-            await message.answer_video_note(video_note=video_file)
+        # Aiogram 3 требует BufferedInputFile, а не сырой BufferedReader
+        with open(output_path, "rb") as f:
+            video_data = f.read()
+        input_file = BufferedInputFile(video_data, filename="circle.mp4")
+        await message.answer_video_note(video_note=input_file)
 
         await status_msg.delete()
 
