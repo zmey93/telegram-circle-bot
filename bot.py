@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.types import Message, BufferedInputFile
 from aiogram.filters import CommandStart
 from dotenv import load_dotenv
-from converter import convert_to_video_note
+from converter import convert_to_video_note, MAX_DURATION
 
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -28,7 +28,8 @@ async def cmd_start(message: Message):
     """Обработчик команды /start"""
     await message.answer(
         "👋 Привет! Я конвертирую видео в кружочки.\n\n"
-        "📹 Просто отправь мне видео, и я верну его в виде кружочка!"
+        f"📹 Отправь мне видео до {MAX_DURATION // 60} минут, и я верну его кружочком!\n"
+        "⚠️ Для длинных видео битрейт автоматически снижается для вписывания в 12 МБ."
     )
 
 
@@ -38,12 +39,24 @@ async def handle_video(message: Message):
     user_id = message.from_user.id
     video = message.video
 
-    status_msg = await message.answer("⏳ Обрабатываю видео, подождите...")
+    duration_str = f"{video.duration // 60}:{video.duration % 60:02d}" if video.duration else "?"
+    status_msg = await message.answer(
+        f"⏳ Обрабатываю видео ({duration_str}), подождите...\n"
+        "🔄 Длинные видео могут обрабатываться дольше."
+    )
 
     input_path = os.path.join(TEMP_DIR, f"{user_id}_input.mp4")
     output_path = os.path.join(TEMP_DIR, f"{user_id}_output.mp4")
 
     try:
+        # Проверяем лимит длительности
+        if video.duration and video.duration > MAX_DURATION:
+            await status_msg.edit_text(
+                f"❌ Видео слишком длинное: {video.duration // 60}м {video.duration % 60}с.\n"
+                f"Максимальная длительность: {MAX_DURATION // 60} минут."
+            )
+            return
+
         logger.info(f"Скачиваем видео от пользователя {user_id}")
         file = await bot.get_file(video.file_id)
         await bot.download_file(file.file_path, destination=input_path)
@@ -52,24 +65,25 @@ async def handle_video(message: Message):
         success = convert_to_video_note(input_path, output_path)
 
         if not success:
-            await status_msg.edit_text("❌ Ошибка при конвертации видео. Попробуйте другой файл.")
+            await status_msg.edit_text(
+                "❌ Ошибка при конвертации.\n"
+                "Возможно видео слишком длинное и не влезает в 12 МБ даже с минимальным битрейтом."
+            )
             return
 
         logger.info(f"Отправляем кружочек пользователю {user_id}")
-        # Aiogram 3 требует BufferedInputFile, а не сырой BufferedReader
         with open(output_path, "rb") as f:
             video_data = f.read()
         input_file = BufferedInputFile(video_data, filename="circle.mp4")
         await message.answer_video_note(video_note=input_file)
-
         await status_msg.delete()
 
     except Exception as e:
         logger.error(f"Ошибка при обработке видео: {e}")
         await status_msg.edit_text(
             "❌ Произошла ошибка. Убедитесь, что:\n"
-            "• Видео не длиннее 59 секунд\n"
-            "• Размер файла не превышает 20 МБ\n"
+            f"• Видео не длиннее {MAX_DURATION // 60} минут\n"
+            "• Размер файла не превышает 50 МБ (ограничение Bot API)\n"
             "• Формат файла поддерживается (MP4, AVI, MOV)"
         )
     finally:
