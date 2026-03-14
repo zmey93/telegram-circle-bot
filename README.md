@@ -9,39 +9,30 @@
 - ffmpeg — конвертация видео в квадратный формат 640×640
 - Docker + Docker Compose
 
-## Быстрый старт
-
-### 1. Клонируй репозиторий
+## Быстрый старт (одна команда)
 
 ```bash
-git clone https://github.com/zmey93/telegram-circle-bot.git
-cd telegram-circle-bot
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/zmey93/telegram-circle-bot/main/install.sh)"
 ```
 
-### 2. Создай файл `.env`
+Скрипт автоматически:
+- Установит Docker (если не установлен)
+- Клонирует репозиторий в `/opt/circlebot`
+- Запросит `BOT_TOKEN` от @BotFather
+- Соберёт и запустит Docker контейнер
+- Зарегистрирует команду `circlebot` в системе
 
-```env
-BOT_TOKEN=твой_токен_от_BotFather
-```
-
-### 3. Запусти через Docker Compose
+## Управление ботом
 
 ```bash
-docker compose up -d --build
+circlebot start      # Запустить бота
+circlebot stop       # Остановить бота
+circlebot restart    # Перезапустить бота
+circlebot update     # Обновить (git pull + пересборка)
+circlebot status     # Статус контейнера
+circlebot logs       # Просмотр логов в реальном времени
+circlebot uninstall  # Полное удаление
 ```
-
-### 4. Проверь логи
-
-```bash
-docker compose logs -f bot
-```
-
-## Использование
-
-1. Найди бота в Telegram
-2. Отправь команду `/start`
-3. Отправь любое видео
-4. Получи кружочек 🎉
 
 ## Ограничения
 
@@ -54,11 +45,12 @@ docker compose logs -f bot
 ## Структура проекта
 
 ```
-telegram-circle-bot/
+/opt/circlebot/          ← директория установки
 ├── bot.py              # Основной файл бота
 ├── converter.py        # Конвертация через ffmpeg
 ├── Dockerfile
 ├── docker-compose.yml
+├── install.sh          # Скрипт установки
 ├── .env                # Токен (не коммитить!)
 ├── .env.example
 ├── .dockerignore
@@ -71,3 +63,5 @@ telegram-circle-bot/
 | Версия | Дата | Описание |
 |--------|------|----------|
 | 1.0.0 | 14.03.2026 | Первоначальный релиз |
+| 2.0.0 | 14.03.2026 | Добавлен Docker + Docker Compose |
+| 3.0.0 | 14.03.2026 | Установка в /opt/circlebot, скрипт install.sh, команда circlebot |
