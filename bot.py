@@ -89,12 +89,22 @@ async def handle_video(message: Message):
 
     except Exception as e:
         logger.error(f"Ошибка при обработке видео: {e}")
-        await status_msg.edit_text(
-            "❌ Произошла ошибка. Убедитесь, что:\n"
-            f"• Видео не длиннее {MAX_DURATION // 60} минут\n"
-            "• Размер файла не превышает 50 МБ (ограничение Bot API)\n"
-            "• Формат файла поддерживается (MP4, AVI, MOV)"
-        )
+        error_msg = str(e)
+
+        if "VOICE_MESSAGES_FORBIDDEN" in error_msg:
+            await status_msg.edit_text(
+                "❌ Не удалось отправить кружочек, так как в ваших настройках приватности "
+                "запрещены голосовые и видеосообщения.\n\n"
+                "Пожалуйста, разрешите их получение в настройках Telegram "
+                "(Настройки -> Конфиденциальность -> Голосовые сообщения) или добавьте бота в исключения."
+            )
+        else:
+            await status_msg.edit_text(
+                "❌ Произошла ошибка. Убедитесь, что:\n"
+                f"• Видео не длиннее {MAX_DURATION // 60} минут\n"
+                "• Размер файла не превышает 50 МБ (ограничение Bot API)\n"
+                "• Формат файла поддерживается (MP4, AVI, MOV)"
+            )
     finally:
         for path in [input_path, output_path]:
             if os.path.exists(path):
